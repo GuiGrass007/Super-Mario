@@ -1,7 +1,18 @@
 class MeuJogo extends JS_CG_2D_API {
     acaoAoIniciar() {
         this.fundo = new Image();
+        this.pontos = 0;
+        this.vida = 3;
+        this.inimigos = [
+            { x: 100, y: 212, vx: 2, vy: 0 },
+            { x: 400, y: 212, vx: 2, vy: -2 },
+            { x: 300, y: 212, vx: 2, vy: 2 },
+            { x: 600, y: 212, vx: 2, vy: -1 }
+        ];
+        this.imgInimigo = new Image(); this.imgInimigo.src = "imagens/player_1.png";
+        this.haColisao = false;
         this.fundo.src = "imagens/fundo1.png"; 
+        this.teclas = {};
 
         this.plataformas = [
             new Retangulo2D(0, 240, 3000, 48),   
@@ -51,25 +62,23 @@ class MeuJogo extends JS_CG_2D_API {
         this.jogador.setAnimacao(this.animacoes.parado.direita);
         this.jogador.delayAnimacao = 10;
 
-        this.teclas = { a: false, d: false, w: false };
+
         this.velocidadeAndando = 2;
         this.cameraX = 0;
     }
 
     teclaPressionada(e) {
-        if (e.key === "a" || e.key === "ArrowLeft") this.teclas.a = true;
-        if (e.key === "d" || e.key === "ArrowRight") this.teclas.d = true;
-        if (e.key === "w" || e.key === "ArrowUp")  this.teclas.w = true;
-
-        if (e.key === " ") {
+        this.teclas[e.key] = true;
+        if (["ArrowLeft", "ArrowRight", "a", "d", "A", "D"].includes(e.key)) {
+            this.alvoMouseX = null;
+        }
+        if ([" "].includes(e.key)) {
             this.fjogador.pular();
         }
     }
 
     teclaLiberada(e) {
-        if (e.key === "a" || e.key === "ArrowLeft") this.teclas.a = false;
-        if (e.key === "d" || e.key === "ArrowRight") this.teclas.d = false;
-        if (e.key === "w" || e.key === "ArrowUp") this.teclas.w = false;
+        this.teclas[e.key] = false;
     }
 
     atualizar(dt) {
@@ -108,6 +117,21 @@ class MeuJogo extends JS_CG_2D_API {
     this.jogador.atualizar();
     this.cameraX = this.fjogador.x - (this.larguraTela() / 2) + (this.fjogador.w / 2);
     if (this.cameraX < 0) this.cameraX = 0;
+
+
+    for (let e of this.inimigos) {
+      e = new Retangulo2D(e.x, e.y, 16,32);
+      e.x += e.vx;
+      const veioDeCima = this.fjogador.prevY + this.fjogador.h <= e.py;
+
+      if (e.x < 0 || e.x >  this.larguraTela() - 40) e.vx *= -1;
+
+      if (this.fjogador.getColisor().intersects(e.getBordas()) && veioDeCima) {
+        this.fjogador.pular();
+      }
+    }
+
+    
 }
 
     desenhar() {
@@ -129,6 +153,9 @@ class MeuJogo extends JS_CG_2D_API {
             this.retangulo(plat.x, plat.y, plat.largura, plat.altura, Estilo.PREENCHIDO);
             this.retangulo(plat.x, plat.y, plat.largura, plat.altura, Estilo.LINHAS);
         }
+        for (let e of this.inimigos) {
+            this.imagem(this.imgInimigo, e.x, e.y);
+        }
 
         this.desenharSprite(this.jogador);
         this.desempilhar();
@@ -137,6 +164,13 @@ class MeuJogo extends JS_CG_2D_API {
         this.gc.font = "bold 12px 'Courier New', monospace";
         this.preenchimento("#FFD700");
         this.gc.fillText("A/D = Mover | W/Espaço = Pular", 20, 26);
+
+        if(this.haColisao){
+            this.preenchimento("red");
+            this.texto("Colidiu", 140, 170, 26, "bold");
+        }
+
+        
     }
 }
 
