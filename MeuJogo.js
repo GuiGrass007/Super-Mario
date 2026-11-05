@@ -3,14 +3,8 @@ class MeuJogo extends JS_CG_2D_API {
         this.fundo = new Image();
         this.pontos = 0;
         this.vida = 3;
-        this.inimigos = [
-            { x: 100, y: 212, vx: 2, vy: 0 },
-            { x: 400, y: 212, vx: 2, vy: -2 },
-            { x: 300, y: 212, vx: 2, vy: 2 },
-            { x: 600, y: 212, vx: 2, vy: -1 }
-        ];
-        this.imgInimigo = new Image(); this.imgInimigo.src = "imagens/player_1.png";
-        this.haColisao = false;
+        this.statusVivo = true;
+
         this.fundo.src = "imagens/fundo1.png"; 
         this.teclas = {};
 
@@ -22,12 +16,23 @@ class MeuJogo extends JS_CG_2D_API {
             new Retangulo2D(3000, 0, 20, 288)     
         ];
 
+        this.inimigoa = new Personagem(200,208,16,32,this.plataformas);
+        this.inimigo2 = new Personagem(500,208,16,32,this.plataformas);
+        this.inimigo3 = new Personagem(700,208,16,32,this.plataformas);
+        this.inimigo4 = new Personagem(900,208,16,32,this.plataformas);
+        this.inimigo5 = new Personagem(400,208,16,32,this.plataformas);
+        this.inimigo6 = new Personagem(300,208,16,32,this.plataformas);
+        this.eVelX = 2;
+
         this.fjogador = new Personagem(50, 150, 16, 32, this.plataformas);
         this.fjogador.setGravidade(0.5);
         this.fjogador.setForcaPulo(-10);
 
         this.jogador = new Sprite(50, 150, 16, 32);
         let frames = this.carregarFrames("player", 20, "imagens");
+
+        this.inimigo1 = new Sprite(200,150,16,32);
+        
 
         this.animacoes = {
             parado: {
@@ -82,7 +87,7 @@ class MeuJogo extends JS_CG_2D_API {
     }
 
     atualizar(dt) {
-
+    
         
     if (this.teclas.a) {
         this.fjogador.x -= this.velocidadeAndando;
@@ -119,17 +124,22 @@ class MeuJogo extends JS_CG_2D_API {
     if (this.cameraX < 0) this.cameraX = 0;
 
 
-    for (let e of this.inimigos) {
-      e = new Retangulo2D(e.x, e.y, 16,32);
-      e.x += e.vx;
-      const veioDeCima = this.fjogador.prevY + this.fjogador.h <= e.py;
+    let ex = this.inimigoa.getX() + this.eVelX;
+    if (ex < 0 || ex >  this.larguraTela() - 40) this.eVelX *= -1;
+    this.inimigoa.setX(ex);
+    this.inimigoa.atualizar();
 
-      if (e.x < 0 || e.x >  this.larguraTela() - 40) e.vx *= -1;
-
-      if (this.fjogador.getColisor().intersects(e.getBordas()) && veioDeCima) {
-        this.fjogador.pular();
-      }
+    const veioDeCima = this.fjogador.prevY + this.fjogador.h <= this.inimigoa.getY();
+    if (this.colisao(this.fjogador,this.inimigoa) && veioDeCima) {
+      this.fjogador.pular();
+    }else{
+       if(this.vida < 0){
+          this.vida -=1;
+        }else{
+          this.statusVivo = false;
+        }
     }
+    
 
     
 }
@@ -153,11 +163,12 @@ class MeuJogo extends JS_CG_2D_API {
             this.retangulo(plat.x, plat.y, plat.largura, plat.altura, Estilo.PREENCHIDO);
             this.retangulo(plat.x, plat.y, plat.largura, plat.altura, Estilo.LINHAS);
         }
-        for (let e of this.inimigos) {
-            this.imagem(this.imgInimigo, e.x, e.y);
-        }
 
         this.desenharSprite(this.jogador);
+
+        this.preenchimento("darkred");
+        this.retangulo(this.inimigoa.getX(), this.inimigoa.getY(), 16, 32, Estilo.PREENCHIDO);
+
         this.desempilhar();
         this.preenchimento("rgba(0, 0, 0, 0.5)");
         this.retangulo(10, 10, 320, 25, Estilo.PREENCHIDO);
