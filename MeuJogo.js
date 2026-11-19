@@ -4,6 +4,7 @@ class MeuJogo extends JS_CG_2D_API {
         this.pontos = 0;
         this.vida = 3;
         this.statusVivo = true;
+        this.imgcerveja = this.carregarFrames("copoceva", 4,"imagens");
 
         this.fundo.src = "imagens/fundo1.png"; 
         this.teclas = {};
@@ -15,6 +16,16 @@ class MeuJogo extends JS_CG_2D_API {
             new Retangulo2D(-20, 0, 20, 288),    
             new Retangulo2D(3000, 0, 20, 288)     
         ];
+        EfeitosSonoros.carregarSom("coleta", "sons/cevaAbrindo.mp3");
+
+
+        this.cerveja = [];
+        for (let i = 0; i < 20; i++) {
+            let ceva = new Sprite(Math.random() * 1500 + 20, 200);
+            ceva.setTamanho(16,32);
+            ceva.setAnimacao(this.imgcerveja);
+            this.cerveja.push(ceva);
+        }
 
         this.inimigoa = new Personagem(200,208,16,32,this.plataformas);
         this.inimigo2 = new Personagem(500,208,16,32,this.plataformas);
@@ -129,15 +140,15 @@ class MeuJogo extends JS_CG_2D_API {
     this.inimigoa.setX(ex);
     this.inimigoa.atualizar();
 
-    const veioDeCima = this.fjogador.prevY + this.fjogador.h <= this.inimigoa.getY();
-    if (this.colisao(this.fjogador,this.inimigoa) && veioDeCima) {
-      this.fjogador.pular();
-    }else{
-       if(this.vida < 0){
-          this.vida -=1;
-        }else{
-          this.statusVivo = false;
-        }
+
+    for (let i = this.cerveja.length - 1; i >= 0; i--) {
+      let cevinha = this.cerveja[i];
+      cevinha.atualizar();
+      if (this.jogador.colisao(cevinha)) {
+        EfeitosSonoros.tocarSom("coleta", false, true);
+        this.pontos += 10;
+        this.cerveja.splice(i, 1);
+      }
     }
     
 
@@ -163,22 +174,26 @@ class MeuJogo extends JS_CG_2D_API {
             this.retangulo(plat.x, plat.y, plat.largura, plat.altura, Estilo.PREENCHIDO);
             this.retangulo(plat.x, plat.y, plat.largura, plat.altura, Estilo.LINHAS);
         }
+        
 
         this.desenharSprite(this.jogador);
 
+        this.cerveja.forEach((ceva) => this.desenharSprite(ceva));
+
         this.preenchimento("darkred");
         this.retangulo(this.inimigoa.getX(), this.inimigoa.getY(), 16, 32, Estilo.PREENCHIDO);
-
         this.desempilhar();
         this.preenchimento("rgba(0, 0, 0, 0.5)");
-        this.retangulo(10, 10, 320, 25, Estilo.PREENCHIDO);
+        this.retangulo(10, 10, 340, 25, Estilo.PREENCHIDO);
         this.gc.font = "bold 12px 'Courier New', monospace";
         this.preenchimento("#FFD700");
-        this.gc.fillText("A/D = Mover | W/Espaço = Pular", 20, 26);
+        this.gc.fillText(`A/D = Mover | W/Espaço = Pular | Pontos = ${this.pontos}`, 20, 26);
 
-        if(this.haColisao){
-            this.preenchimento("red");
-            this.texto("Colidiu", 140, 170, 26, "bold");
+        
+
+        if (this.cerveja) {
+            this.preenchimento("#e94560");
+            this.circulo(this.cerveja.x, this.cerveja.y, this.cerveja.largura, this.cerveja.altura, Estilo.PREENCHIDO);
         }
 
         
