@@ -27,12 +27,13 @@ class MeuJogo extends JS_CG_2D_API {
             this.cerveja.push(ceva);
         }
 
-        this.inimigoa = new Personagem(200,208,16,32,this.plataformas);
-        this.inimigo2 = new Personagem(500,208,16,32,this.plataformas);
-        this.inimigo3 = new Personagem(700,208,16,32,this.plataformas);
-        this.inimigo4 = new Personagem(900,208,16,32,this.plataformas);
-        this.inimigo5 = new Personagem(400,208,16,32,this.plataformas);
-        this.inimigo6 = new Personagem(300,208,16,32,this.plataformas);
+        this.inimigos = new ListaPersonagens();
+
+        const posicoesInimigos = [200, 300, 400, 500, 700, 900];
+        for (const posx of posicoesInimigos) {
+            const inimigo = new Personagem(posx, 208, 16, 32, this.plataformas);
+            this.inimigos.inserirFim(inimigo);
+        }
         this.eVelX = 2;
 
         this.fjogador = new Personagem(50, 150, 16, 32, this.plataformas);
@@ -135,10 +136,26 @@ class MeuJogo extends JS_CG_2D_API {
     if (this.cameraX < 0) this.cameraX = 0;
 
 
-    let ex = this.inimigoa.getX() + this.eVelX;
-    if (ex < 0 || ex >  this.larguraTela() - 40) this.eVelX *= -1;
-    this.inimigoa.setX(ex);
-    this.inimigoa.atualizar();
+    this.inimigos.paraCada((inimigo) => {
+      let ex = inimigo.getX() + this.eVelX;
+      if (ex < 0 || ex > this.larguraTela() - 40) {
+        this.eVelX *= -1;
+      }
+      inimigo.setX(ex);
+      inimigo.atualizar();
+
+      if(this.colisao(this.fjogador,inimigo)){
+        const caiuDeCima = this.fjogador.velY > 0 && this.fjogador.prevY + this.fjogador.h <= inimigo.y + inimigo.h / 2;
+
+        if(caiuDeCima){
+            this.fjogador.velY = this.fjogador.forcaPulo * 0.7;
+            this.inimigos.remover(inimigo);
+        }else{
+            this.vida--;
+        }
+      }
+
+    });
 
 
     for (let i = this.cerveja.length - 1; i >= 0; i--) {
@@ -180,8 +197,16 @@ class MeuJogo extends JS_CG_2D_API {
 
         this.cerveja.forEach((ceva) => this.desenharSprite(ceva));
 
-        this.preenchimento("darkred");
-        this.retangulo(this.inimigoa.getX(), this.inimigoa.getY(), 16, 32, Estilo.PREENCHIDO);
+       this.preenchimento("darkred");
+       this.inimigos.paraCada((inimigo) => {
+       this.retangulo(
+            inimigo.getX(),
+            inimigo.getY(),
+            inimigo.w,
+            inimigo.h,
+            Estilo.PREENCHIDO
+        );
+        });
         this.desempilhar();
         this.preenchimento("rgba(0, 0, 0, 0.5)");
         this.retangulo(10, 10, 340, 25, Estilo.PREENCHIDO);
