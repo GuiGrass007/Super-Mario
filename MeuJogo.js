@@ -4,7 +4,7 @@ class MeuJogo extends JS_CG_2D_API {
         this.pontos = 0;
         this.vida = 3;
         this.statusVivo = true;
-        this.imgcerveja = this.carregarFrames("copoceva", 4,"imagens");
+        this.imgcerveja = this.carregarFrames("Polar", 1,"imagens/Polar");
 
         this.fundo.src = "imagens/fundo1.png"; 
         this.teclas = {};
@@ -16,16 +16,39 @@ class MeuJogo extends JS_CG_2D_API {
             new Retangulo2D(-20, 0, 20, 288),    
             new Retangulo2D(3000, 0, 20, 288)     
         ];
-        EfeitosSonoros.carregarSom("coleta", "sons/cevaAbrindo.mp3");
+        EfeitosSonoros.carregarSom("coleta", "sons/SomCeva.mp3");
+        EfeitosSonoros.carregarSom("pulo", "sons/somPulo.mp3");
+        EfeitosSonoros.carregarSom("inimigoMorre", "sons/inimigoMorrendo.mp3");
 
 
+        this.boss = new Personagem(500,500,16,32,this.plataformas);
+        this.boss.setGravidade(0.7);
+        this.boss.setForcaPulo(-10);
+        this.velBoss = 4;
+
+
+
+        this.projetil = new Retangulo2D(500,500,16,16);
+        this.projetilVel = 3;
+
+        this.iniciarTimer("tiro", Math.random(), true, () => {});
+
+        const posCerveja = [
+            { x:200 ,y:148},
+            { x:270 ,y:98},
+            { x:520 ,y:208},
+            { x:780 ,y:208}
+        ];
         this.cerveja = [];
-        for (let i = 0; i < 20; i++) {
-            let ceva = new Sprite(Math.random() * 1500 + 20, 200);
+        
+        for(const pos of posCerveja){
+            let ceva = new Sprite(pos.x,pos.y);
             ceva.setTamanho(16,32);
             ceva.setAnimacao(this.imgcerveja);
             this.cerveja.push(ceva);
         }
+
+
 
         this.inimigos = new ListaPersonagens();
 
@@ -35,6 +58,8 @@ class MeuJogo extends JS_CG_2D_API {
             this.inimigos.inserirFim(inimigo);
         }
         this.eVelX = 2;
+        this.inimigoeVelX = 2;
+
 
         this.fjogador = new Personagem(50, 150, 16, 32, this.plataformas);
         this.fjogador.setGravidade(0.5);
@@ -42,8 +67,6 @@ class MeuJogo extends JS_CG_2D_API {
 
         this.jogador = new Sprite(50, 150, 16, 32);
         let frames = this.carregarFrames("player", 20, "imagens");
-
-        this.inimigo1 = new Sprite(200,150,16,32);
         
 
         this.animacoes = {
@@ -90,8 +113,10 @@ class MeuJogo extends JS_CG_2D_API {
             this.alvoMouseX = null;
         }
         if ([" "].includes(e.key)) {
-            this.fjogador.pular();
+            this.fjogador.pular();  
+            EfeitosSonoros.tocarSom("pulo", false, true); 
         }
+
     }
 
     teclaLiberada(e) {
@@ -135,11 +160,23 @@ class MeuJogo extends JS_CG_2D_API {
     this.cameraX = this.fjogador.x - (this.larguraTela() / 2) + (this.fjogador.w / 2);
     if (this.cameraX < 0) this.cameraX = 0;
 
+    let BossX = this.boss.getX() + this.velBoss;
+    if(BossX < 0 || BossX > this.larguraTela() - 40){
+        this.velBoss *= -2;
+    }
+    let tempo = this.getTimer("tiro");
+
+    if(tempo < 0){//verificar para qual lado ele está olhando
+        let ex = this.projetil.getX() + this.projetilVel;
+    }
+    this.boss.setX(BossX);
+    this.boss.atualizar();
+    
 
     this.inimigos.paraCada((inimigo) => {
-      let ex = inimigo.getX() + this.eVelX;
+      let ex = inimigo.getX() + this.inimigoeVelX;
       if (ex < 0 || ex > this.larguraTela() - 40) {
-        this.eVelX *= -1;
+        this.inimigoeVelX *= -1;
       }
       inimigo.setX(ex);
       inimigo.atualizar();
@@ -149,6 +186,7 @@ class MeuJogo extends JS_CG_2D_API {
 
         if(caiuDeCima){
             this.fjogador.velY = this.fjogador.forcaPulo * 0.7;
+            EfeitosSonoros.tocarSom("inimigoMorre", false, true); 
             this.inimigos.remover(inimigo);
         }else{
             this.vida--;
@@ -196,6 +234,7 @@ class MeuJogo extends JS_CG_2D_API {
         this.desenharSprite(this.jogador);
 
         this.cerveja.forEach((ceva) => this.desenharSprite(ceva));
+
 
        this.preenchimento("darkred");
        this.inimigos.paraCada((inimigo) => {
